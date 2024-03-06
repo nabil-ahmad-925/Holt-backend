@@ -1,6 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var { login, signup, forgotPassword, verifyToken, saveSummary } = require('../controllers/auth'); // Adjust the path based on your project structure
+var { login, signup, forgotPassword, verifyToken, saveSummary, getAllSummaries } = require('../controllers/auth'); // Adjust the path based on your project structure
 
  
 
@@ -19,7 +19,8 @@ router.post('/verify', verifyToken);
 // POST forgot password
 router.post('/save-summary', saveSummary);
 
-
+// Define routes
+router.get('/summaries', getAllSummaries);
 
 
 module.exports = router;

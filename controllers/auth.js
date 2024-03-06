@@ -199,5 +199,23 @@ exports.saveSummary = async function (req, res) {
     }
   };
 
- 
+
+exports.getAllSummaries = async function (req, res) {
+    try {
+      // Fetch all data from the 'video_data' table
+      const { data, error } = await supabase.from("video_data").select("*");
+  
+      if (error) {
+        console.error("Error fetching data from Supabase:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+      }
+  
+      console.log("Data fetched successfully:", data);
+      return res.json({ summaries: data });
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
+  };
+  
  
