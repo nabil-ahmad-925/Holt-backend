@@ -15,9 +15,12 @@ const users = [
 
 // Login function
 exports.login = async function (req, res) {
-  const { username, password } = req.body;
 
-  if (!username || !password) {
+  console.log("EMail===++>",req.body)
+
+  const { email, password } = req.body;
+
+  if (!email || !password) {
     return res.status(400).json({ message: "Username or password required" });
   }
 
@@ -26,7 +29,7 @@ exports.login = async function (req, res) {
     const { data: users, error } = await supabase
       .from("users")
       .select("*")
-      .eq("username", username);
+      .eq("email", email);
 
     if (error) {
       console.error("Error fetching user:", error);
