@@ -66,7 +66,7 @@ exports.login = async function (req, res) {
 // Signup function
 exports.signup = async function (req, res) {
   const { username, email, password } = req.body;
-
+   
   try {
     // Check if the user already exists in the 'users' table
     const { data: existingUser, error } = await supabase
@@ -88,7 +88,7 @@ exports.signup = async function (req, res) {
       .from("users")
       .upsert([
         {
-          username,
+          username:email,
           email,
           password: hashedPassword,
         },
