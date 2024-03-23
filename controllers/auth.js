@@ -8,10 +8,22 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_API_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const users = [
-  { username: "holt", password: "admin" },
-  // Add more users as needed
-];
+ // Function to generate access token
+function generateAccessToken(user) {
+  return jwt.sign(
+    { userId: user.id, username: user.username },
+    process.env.JWT_SECRET,
+    { expiresIn: "20m" } // Set token expiration time as needed
+  );
+}
+
+// Function to generate refresh token
+function generateRefreshToken(user) {
+  return jwt.sign(
+    { userId: user.id, username: user.username },
+    '57asdtsdfdsfsdfsdfhdschsdkjcbd'
+  );
+}
 
 // Login function
 exports.login = async function (req, res) {
@@ -35,6 +47,7 @@ exports.login = async function (req, res) {
       console.error("Error fetching user:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
+    
     console.log("Users-==========++>", users);
     const user = users[0]; // Assuming usernames are unique
 
@@ -49,17 +62,56 @@ exports.login = async function (req, res) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Generate a JWT token for the authenticated user
-    const token = jwt.sign(
-      { userId: user.id, username: user.username },
-      process.env.JWT_SECRET,
-      { expiresIn: "20h" }
-    );
+     // Generate access token and refresh token
+     const accessToken = generateAccessToken(user);
+     const refreshToken = generateRefreshToken(user);
 
-    res.json({ token });
-  } catch (error) {
+ 
+     // For now, we will just return the tokens in the response
+     res.json({ accessToken, refreshToken });
+   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Refresh token function
+exports.refreshToken = async function (req, res) {
+  console.log("Refresh token called from backend... ");
+  console.log("Token body ...",req.body);
+  const refreshToken = req.body.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: "Refresh token is required" });
+  }
+
+  try {
+    // Verify the refresh token
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+    // Fetch user from the database based on decoded payload
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", decoded.userId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching user:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    // Generate new access token
+    const accessToken = generateAccessToken(user);
+
+    res.json({ accessToken });
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    res.status(401).json({ message: "Unauthorized" });
   }
 };
 
