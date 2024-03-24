@@ -13,7 +13,7 @@ function generateAccessToken(user) {
   return jwt.sign(
     { userId: user.id, username: user.username },
     process.env.JWT_SECRET,
-    { expiresIn: "20m" } // Set token expiration time as needed
+    { expiresIn: "24h" } // Set token expiration time as needed
   );
 }
 
@@ -21,7 +21,8 @@ function generateAccessToken(user) {
 function generateRefreshToken(user) {
   return jwt.sign(
     { userId: user.id, username: user.username },
-    '57asdtsdfdsfsdfsdfhdschsdkjcbd'
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "48h" }
   );
 }
 
@@ -78,17 +79,17 @@ exports.login = async function (req, res) {
 // Refresh token function
 exports.refreshToken = async function (req, res) {
   console.log("Refresh token called from backend... ");
-  console.log("Token body ...",req.body);
-  const refreshToken = req.body.refreshToken;
-
-  if (!refreshToken) {
+  console.log("refresh token ---->", req.body);
+  const { refreshToken: incomingRefreshToken } = req.body;
+  console.log("refresh tokkkkkkk", incomingRefreshToken);
+  
+  if (!incomingRefreshToken) {
     return res.status(401).json({ message: "Refresh token is required" });
   }
 
   try {
-    // Verify the refresh token
-    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-
+    const decoded = jwt.verify(incomingRefreshToken, '567y56y54435t45f45ythfgete5rg4eg');
+    console.log("User========>", decoded);
     // Fetch user from the database based on decoded payload
     const { data: user, error } = await supabase
       .from("users")
@@ -105,15 +106,22 @@ exports.refreshToken = async function (req, res) {
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    // Generate new access token
+    // Generate access token and a new refresh token
     const accessToken = generateAccessToken(user);
+    console.log("new refresh token going ---------",accessToken)
+    // For now, we will just return the tokens in the response
+    res.json({ accessToken  });
 
-    res.json({ accessToken });
   } catch (error) {
-    console.error("Error refreshing token:", error);
-    res.status(401).json({ message: "Unauthorized" });
+    if (error instanceof jwt.TokenExpiredError) {
+      // Handle expired refresh token
+      console.log("my token is expired ====>");
+      return res.status(401).json({ message: "Refresh token has expired" });
+    }
+ 
   }
 };
+
 
 // Signup function
 exports.signup = async function (req, res) {
